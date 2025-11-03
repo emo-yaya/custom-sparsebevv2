@@ -270,6 +270,7 @@ class SparseBEV(MVXTwoStageDetector):
             for i in range(len(img_metas)):
                 img_metas[i]['gt_bboxes_3d'] = gt_bboxes_3d[i]
                 img_metas[i]['gt_labels_3d'] = [ 0 if cur_gt_labels_3d >= 0 else cur_gt_labels_3d for cur_gt_labels_3d in gt_labels_3d[i]]
+                gt_labels_3d[i] = [ 0 if cur_gt_labels_3d >= 0 else cur_gt_labels_3d for cur_gt_labels_3d in gt_labels_3d[i]]
             losses_bev = self.bev_forward_pts_train(bev_feat, gt_bboxes_3d, gt_labels_3d, img_metas, gt_bboxes_ignore)
             losses.update({f"loss.bev.{k}": v for k, v in losses_bev.items()})
 
