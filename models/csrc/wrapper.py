@@ -37,6 +37,37 @@ def msmv_sampling_pytorch(mlvl_feats, sampling_locations, scale_weights):
 
     return final.permute(0, 2, 1, 3)
 
+def msmv_sampling_bev(bev_feats, sampling_locations, scale_weights):
+    assert scale_weights.shape[-1] == len(bev_feats)
+
+    BTG, C, N, H, W = bev_feats[0].shape
+    _, Q, P, _ = sampling_locations.shape
+
+    assert N == 1, f"BEV features should have N=1, but got N={N}"
+
+    sampling_grid = sampling_locations * 2 - 1
+
+    final_feat = torch.zeros(
+        [BTG, C, Q, P],
+        dtype=bev_feats[0].dtype,
+        device=bev_feats[0].device
+    )
+
+    for lvl, feat_5d in enumerate(bev_feats):
+        feat_4d = feat_5d.squeeze(2) 
+
+        sampled_feat_lvl = F.grid_sample(
+            feat_4d,
+            sampling_grid,
+            mode='bilinear',
+            padding_mode='zeros',
+            align_corners=False
+        ) 
+        current_weights = scale_weights[..., lvl].reshape(BTG, 1, Q, P)
+        final_feat += sampled_feat_lvl * current_weights
+
+    return final_feat.permute(0, 2, 1, 3)
+
 
 class MSMVSamplingC2345(torch.autograd.Function):
     @staticmethod
